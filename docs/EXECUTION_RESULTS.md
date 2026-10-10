@@ -22,3 +22,9 @@ No se verificó PostgreSQL real, UI ni flujos de negocio. No se ejecutó Postman
 Verificación local: `npm ci`, `npm test`, `npm run check`, `npm start`; consultar `/api/health` y `/api/ready` como explica README.
 
 Commit del incremento: `chore: initialize Express application with health checks`.
+
+## Esquema PostgreSQL — 2026-10-10
+
+Instancia PostgreSQL temporal en localhost:55439, BD veriq_test, separada de desarrollo. Se aplicó schema.sql con ON_ERROR_STOP: tres tablas y cinco índices creados. Se aplicó seed.sql y se comprobó la existencia del caso de ejemplo. Los datos del seed no representan pruebas ejecutadas ni defectos reales.
+
+Archivos: database/schema.sql y database/seed.sql. Commit: feat(database): add QA schema and sample seed.
