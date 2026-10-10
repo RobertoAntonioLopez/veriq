@@ -1,0 +1,343 @@
+{
+  "info": {
+    "name": "VeriQ — Casos de prueba",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Verificación secuencial del CRUD de casos. Ejecutar en orden contra una base local de verificación. La colección crea y elimina sus propios registros."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:3000"
+    },
+    {
+      "key": "caseId",
+      "value": ""
+    },
+    {
+      "key": "duplicateId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "01 — Disponibilidad",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/ready"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 — Crear caso",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/test-cases",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Verificación API: crear caso\",\n  \"steps\": \"1. Enviar solicitud.\\n2. Consultar el recurso.\",\n  \"expectedResult\": \"Se guarda y se puede consultar.\",\n  \"priority\": \"high\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.unset('caseId');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "if (pm.response.code === 201) pm.collectionVariables.set('caseId', String(pm.response.json().data.id));",
+              "pm.test('Título persistido', () => pm.expect(pm.response.json().data.title).to.eql('Verificación API: crear caso'));",
+              "pm.test('Location del recurso', () => pm.expect(pm.response.headers.get('Location')).to.eql('/api/test-cases/' + pm.response.json().data.id));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 — Consultar caso",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/test-cases/{{caseId}}"
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!/^[1-9]\\d*$/.test(pm.collectionVariables.get('caseId') || '')) { pm.execution.skipRequest(); throw new Error('Ejecuta primero la creación del caso.'); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('ID correcto', () => pm.expect(String(pm.response.json().data.id)).to.eql(pm.collectionVariables.get('caseId')));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 — Editar prioridad",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/test-cases/{{caseId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"priority\": \"low\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!/^[1-9]\\d*$/.test(pm.collectionVariables.get('caseId') || '')) { pm.execution.skipRequest(); throw new Error('Ejecuta primero la creación del caso.'); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Prioridad actualizada', () => pm.expect(pm.response.json().data.priority).to.eql('low'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 — Listar con paginación",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/test-cases?limit=1&offset=0"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Página de hasta un caso', () => pm.expect(pm.response.json().data.length).to.be.at.most(1));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 — Título obligatorio",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/test-cases",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"steps\": \"Enviar POST\",\n  \"expectedResult\": \"Resultado\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+              "pm.test('Error de validación', () => pm.expect(pm.response.json().error.code).to.eql('VALIDATION_ERROR'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 — Título repetido permitido",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/test-cases",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Verificación API: crear caso\",\n  \"steps\": \"1. Enviar solicitud.\\n2. Consultar el recurso.\",\n  \"expectedResult\": \"Se guarda y se puede consultar.\",\n  \"priority\": \"high\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.unset('duplicateId');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "if (pm.response.code === 201) pm.collectionVariables.set('duplicateId', String(pm.response.json().data.id));",
+              "pm.test('Nuevo ID', () => pm.expect(String(pm.response.json().data.id)).not.to.eql(pm.collectionVariables.get('caseId')));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 — Borrar duplicado de verificación",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{baseUrl}}/api/test-cases/{{duplicateId}}"
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!/^[1-9]\\d*$/.test(pm.collectionVariables.get('duplicateId') || '')) { pm.execution.skipRequest(); throw new Error('Ejecuta primero la creación del caso.'); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 204', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 — Borrar caso de verificación",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{baseUrl}}/api/test-cases/{{caseId}}"
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!/^[1-9]\\d*$/.test(pm.collectionVariables.get('caseId') || '')) { pm.execution.skipRequest(); throw new Error('Ejecuta primero la creación del caso.'); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 204', () => pm.response.to.have.status(204));",
+              "pm.test('Sin cuerpo', () => pm.expect(pm.response.text()).to.eql(''));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 — Consultar caso borrado",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/test-cases/{{caseId}}"
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!/^[1-9]\\d*$/.test(pm.collectionVariables.get('caseId') || '')) { pm.execution.skipRequest(); throw new Error('Ejecuta primero la creación del caso.'); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+              "pm.test('Recurso inexistente', () => pm.expect(pm.response.json().error.code).to.eql('TEST_CASE_NOT_FOUND'));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
