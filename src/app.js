@@ -1,4 +1,5 @@
 import express from 'express';
+import { createDashboardRouter } from './modules/dashboard/routes.js';
 import { createBugRouter } from './modules/bugs/routes.js';
 import { createTestRunRouter } from './modules/test-runs/routes.js';
 import { createTestCaseRouter } from './modules/test-cases/routes.js';
@@ -26,6 +27,7 @@ export function createApp({ database = null, logger = console } = {}) {
     }
   });
 
+  app.use('/api/dashboard', createDashboardRouter(database));
   app.use('/api/bugs', createBugRouter(database));
   app.use('/api/test-runs', createTestRunRouter(database));
   app.use('/api/test-cases', createTestCaseRouter(database));
