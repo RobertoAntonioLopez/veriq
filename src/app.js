@@ -1,4 +1,5 @@
 import express from 'express';
+import { createTestRunRouter } from './modules/test-runs/routes.js';
 import { createTestCaseRouter } from './modules/test-cases/routes.js';
 import { errorHandler } from './middleware/error-handler.js';
 
@@ -24,6 +25,7 @@ export function createApp({ database = null, logger = console } = {}) {
     }
   });
 
+  app.use('/api/test-runs', createTestRunRouter(database));
   app.use('/api/test-cases', createTestCaseRouter(database));
 
   app.use((req, res) => {

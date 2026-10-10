@@ -38,3 +38,32 @@ export function parsePagination(query) {
   }
   return pagination;
 }
+
+export function validateObject(body, allowedFields, partial = false) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    throw invalidInput('El cuerpo debe ser un objeto JSON.');
+  }
+  const keys = Object.keys(body);
+  if (keys.some((key) => !allowedFields.includes(key))) throw invalidInput('El cuerpo contiene campos desconocidos.');
+  if (partial && keys.length === 0) throw invalidInput('Incluye al menos un campo para editar.');
+}
+
+export function validateText(value, field, { required = true, maximum = 10000 } = {}) {
+  if (typeof value !== 'string' || value.includes('\u0000')) throw invalidInput(`${field} debe ser texto válido.`);
+  const text = value.trim();
+  if (required && !text) throw invalidInput(`${field} es obligatorio.`);
+  if (Array.from(text).length > maximum) throw invalidInput(`${field} admite hasta ${maximum} caracteres.`);
+  return text;
+}
+
+export function validateEnum(value, field, choices) {
+  if (!choices.includes(value)) throw invalidInput(`${field} debe ser ${choices.join(', ')}.`);
+  return value;
+}
+
+export function validateReference(value) {
+  if (!Number.isInteger(value) || value < 1 || value > 2147483647) {
+    throw invalidInput('testCaseId debe ser un entero positivo.');
+  }
+  return value;
+}
