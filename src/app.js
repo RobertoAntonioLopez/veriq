@@ -1,4 +1,5 @@
 import express from 'express';
+import { createTestCaseRouter } from './modules/test-cases/routes.js';
 import { errorHandler } from './middleware/error-handler.js';
 
 export function createApp({ database = null, logger = console } = {}) {
@@ -22,6 +23,8 @@ export function createApp({ database = null, logger = console } = {}) {
       res.status(503).json({ error: { code: 'DATABASE_UNAVAILABLE', message: 'La base de datos no está disponible.' } });
     }
   });
+
+  app.use('/api/test-cases', createTestCaseRouter(database));
 
   app.use((req, res) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Ruta no encontrada.' } });

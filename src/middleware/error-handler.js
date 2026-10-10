@@ -1,5 +1,10 @@
+import { HttpError } from '../utils/http-error.js';
+
 export function errorHandler(error, req, res, next) {
   if (res.headersSent) return next(error);
+  if (error instanceof HttpError) {
+    return res.status(error.status).json({ error: { code: error.code, message: error.message } });
+  }
   if (error.type === 'entity.parse.failed') {
     return res.status(400).json({ error: { code: 'INVALID_JSON', message: 'El cuerpo JSON no es válido.' } });
   }

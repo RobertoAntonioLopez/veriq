@@ -71,3 +71,19 @@ test('oversized JSON returns 413', async (t) => {
   assert.equal(response.status, 413);
   assert.equal((await response.json()).error.code, 'PAYLOAD_TOO_LARGE');
 });
+
+test('case endpoints return 503 without database configuration', async (t) => {
+  const url = await startApp(t);
+  const response = await fetch(`${url}/api/test-cases`);
+  assert.equal(response.status, 503);
+  assert.equal((await response.json()).error.code, 'DATABASE_UNAVAILABLE');
+});
+
+test('unexpected repository failures return a generic 500', async (t) => {
+  const url = await startApp(t, { async query() { throw new Error('secret SQL details'); } });
+  const response = await fetch(`${url}/api/test-cases`);
+  assert.equal(response.status, 500);
+  assert.deepEqual(await response.json(), { error: {
+    code: 'INTERNAL_ERROR', message: 'Ocurrió un error inesperado.',
+  } });
+});
