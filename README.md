@@ -66,6 +66,10 @@ npm start
 
 Abre [VeriQ en localhost](http://127.0.0.1:3000). Este enlace funciona con el servidor local en ejecución; no es una demo alojada. No se necesita compilación del frontend. [Configuración detallada y solución de problemas](docs/SETUP.md).
 
+## Despliegue
+
+La aplicación incluye una entrada para Cloudflare Workers y mantiene PostgreSQL como almacenamiento. Consulta la [guía de despliegue](docs/DEPLOYMENT.md) para configurar la conexión como secreto y verificar la demo.
+
 ## Verificar el proyecto
 
 ```sh
@@ -96,6 +100,6 @@ La base de pruebas debe terminar en `_test` y tener un nombre distinto del de de
 
 ## Alcance y mejoras siguientes
 
-El MVP está pensado para un único espacio de trabajo local. No incluye autenticación, roles, adjuntos, exportaciones ni despliegue público. La inmutabilidad del historial se garantiza a través de la API; un administrador con acceso SQL puede modificar los registros.
+El MVP está pensado para un único espacio de trabajo. No incluye autenticación, roles, adjuntos ni exportaciones. El despliegue de demostración en Cloudflare Workers requiere una base PostgreSQL alojada y exclusiva con datos ficticios. La inmutabilidad del historial se garantiza a través de la API; un administrador con acceso SQL puede modificar los registros.
 
 Las siguientes mejoras serían migraciones versionadas, autenticación para uso compartido, control de conflictos de edición y una suite de navegador repetible. La revisión visual actual no sustituye una auditoría completa de accesibilidad.

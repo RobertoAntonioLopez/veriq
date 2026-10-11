@@ -6,7 +6,7 @@ import { createTestRunRouter } from './modules/test-runs/routes.js';
 import { createTestCaseRouter } from './modules/test-cases/routes.js';
 import { errorHandler } from './middleware/error-handler.js';
 
-export function createApp({ database = null, logger = console } = {}) {
+export function createApp({ database = null, logger = console, serveStatic = true } = {}) {
   const app = express();
   app.locals.logger = logger;
   app.disable('x-powered-by');
@@ -33,7 +33,9 @@ export function createApp({ database = null, logger = console } = {}) {
   app.use('/api/test-runs', createTestRunRouter(database));
   app.use('/api/test-cases', createTestCaseRouter(database));
 
-  app.use(express.static(fileURLToPath(new URL('../public', import.meta.url))));
+  if (serveStatic) {
+    app.use(express.static(fileURLToPath(new URL('../public', import.meta.url))));
+  }
 
   app.use((req, res) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Ruta no encontrada.' } });

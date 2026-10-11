@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "veriq",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-11",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "enable_nodejs_http_server_modules"
+  ],
+  "assets": {
+    "directory": "./public",
+    "run_worker_first": [
+      "/api",
+      "/api/*"
+    ]
+  }
+}
