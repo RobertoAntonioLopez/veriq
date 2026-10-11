@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f5f8">
+  <title>VeriQ · Gestión de calidad</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <script type="module" src="/js/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Saltar al contenido</a>
+  <header class="topbar">
+    <a class="wordmark" href="#dashboard" aria-label="VeriQ, inicio">VeriQ</a>
+    <span class="topbar-description">Gestión de calidad</span>
+    <span class="workspace-name">Espacio de trabajo</span>
+  </header>
+  <div class="workspace">
+    <aside class="sidebar">
+      <p class="nav-heading">PROYECTO</p>
+      <nav aria-label="Navegación principal">
+        <a href="#dashboard" data-view="dashboard">Resumen</a>
+        <a href="#test-cases" data-view="test-cases">Casos de prueba</a>
+        <a href="#test-runs" data-view="test-runs">Ejecuciones</a>
+        <a href="#bugs" data-view="bugs">Bugs</a>
+      </nav>
+      <p class="sidebar-note">Cada prueba cuenta.<br>Conserva sus resultados.</p>
+    </aside>
+    <main id="main" tabindex="-1">
+      <div id="notification" role="status" aria-live="polite" hidden></div>
+      <div id="content" aria-busy="true"><p class="loading">Cargando espacio de trabajo…</p></div>
+    </main>
+  </div>
+  <dialog id="editor" aria-labelledby="dialog-title"><div id="dialog-content"></div></dialog>
+  <noscript>Activa JavaScript para usar VeriQ.</noscript>
+</body>
+</html>

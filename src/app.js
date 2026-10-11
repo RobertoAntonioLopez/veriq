@@ -1,4 +1,5 @@
 import express from 'express';
+import { fileURLToPath } from 'node:url';
 import { createDashboardRouter } from './modules/dashboard/routes.js';
 import { createBugRouter } from './modules/bugs/routes.js';
 import { createTestRunRouter } from './modules/test-runs/routes.js';
@@ -31,6 +32,8 @@ export function createApp({ database = null, logger = console } = {}) {
   app.use('/api/bugs', createBugRouter(database));
   app.use('/api/test-runs', createTestRunRouter(database));
   app.use('/api/test-cases', createTestCaseRouter(database));
+
+  app.use(express.static(fileURLToPath(new URL('../public', import.meta.url))));
 
   app.use((req, res) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Ruta no encontrada.' } });

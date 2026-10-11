@@ -87,3 +87,18 @@ test('unexpected repository failures return a generic 500', async (t) => {
     code: 'INTERNAL_ERROR', message: 'Ocurrió un error inesperado.',
   } });
 });
+
+test('web interface and assets are served without exposing project files', async (t) => {
+  const url = await startApp(t);
+  const page = await fetch(url);
+  assert.equal(page.status, 200);
+  const html = await page.text();
+  assert.match(html, /<html lang="es">/);
+  assert.match(html, /VeriQ/);
+  for (const path of ['/css/styles.css', '/js/app.js', '/js/forms.js', '/js/api.js']) {
+    assert.equal((await fetch(url + path)).status, 200, path);
+  }
+  for (const path of ['/.env', '/package.json', '/database/schema.sql', '/src/app.js']) {
+    assert.equal((await fetch(url + path)).status, 404, path);
+  }
+});
