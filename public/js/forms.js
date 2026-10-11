@@ -3,7 +3,7 @@ import { escapeHtml as e, labels } from './ui.js';
 function textField(name, label, value = '', { required = true, multiline = false, maximum = 10000, hint = '' } = {}) {
   return `<div class="field full"><label for="field-${name}">${label}${required ? ' *' : ''}</label>
     ${multiline ? `<textarea id="field-${name}" name="${name}" ${required ? 'required' : ''} data-maximum="${maximum}" rows="3">${e(value)}</textarea>` :
-    `<input id="field-${name}" name="${name}" value="${e(value)}" ${required ? 'required' : ''} data-maximum="${maximum}">`}
+      `<input id="field-${name}" name="${name}" value="${e(value)}" ${required ? 'required' : ''} data-maximum="${maximum}">`}
     ${hint ? `<small>${hint}</small>` : ''}</div>`;
 }
 
