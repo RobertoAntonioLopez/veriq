@@ -2,7 +2,7 @@
   "info": {
     "name": "VeriQ — Casos de prueba",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Verificación secuencial del CRUD de casos. Ejecutar en orden contra una base local de verificación. La colección crea y elimina sus propios registros."
+    "description": "Verificación secuencial del CRUD de casos de prueba. Incluye aserciones HTTP, creación de datos propios y limpieza. Ejecutar en un entorno local de verificación; instrucciones en postman/README.md."
   },
   "variable": [
     {

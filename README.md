@@ -1,64 +1,101 @@
 # VeriQ
 
-Plataforma de gestión de QA con Node.js, Express, PostgreSQL y JavaScript vanilla.
+**Gestión de casos de prueba, ejecuciones y defectos en una sola aplicación.**
 
-## Estado
-MVP funcional: casos de prueba, historial de ejecuciones, reportes de bugs y dashboard con datos reales. Interfaz responsive en HTML, CSS y JavaScript vanilla, con logo tipográfico VeriQ.
+VeriQ permite definir qué comprobar, registrar el resultado de cada ejecución y seguir los defectos hasta su cierre. Cada ejecución conserva una copia del caso probado: una edición posterior no altera la evidencia histórica.
 
-- [Arquitectura y alcance](docs/ARCHITECTURE.md)
-- [Contrato de la API implementada](docs/API.md)
-- [Evidencia automatizada](docs/EXECUTION_RESULTS.md)
-- [Defecto encontrado y corregido](docs/BUG_REPORTS.md)
+Proyecto de portafolio orientado a desarrollo backend y aseguramiento de calidad, construido con **Node.js, Express, PostgreSQL y JavaScript vanilla**.
 
-## Preparar y ejecutar
+![Dashboard de VeriQ con estadísticas, historial de ejecuciones y navegación lateral](docs/images/dashboard.png)
 
-Requisitos: Node.js 24 o superior, PostgreSQL activo y utilidades psql/createdb. Configura un usuario PostgreSQL local con permiso para crear tus bases. Los siguientes comandos usan las credenciales y el host predeterminados de tu instalación; ajusta -h y -U si corresponde.
+*Captura del entorno de verificación con datos de prueba. Los conteos se calculan desde PostgreSQL.*
+
+## Funcionalidades
+
+| Módulo | Comportamiento |
+| --- | --- |
+| Casos de prueba | Crear, consultar, editar y eliminar casos sin historial; definir pasos, precondiciones, resultado esperado y prioridad. |
+| Ejecuciones | Registrar Passed, Failed o Blocked, consultar el historial y filtrar por caso. |
+| Bugs | Documentar reproducción, resultado esperado y actual; gestionar estado, severidad y prioridad de forma independiente. |
+| Dashboard | Consultar seis métricas calculadas sobre los registros persistidos, incluyendo ceros cuando no hay datos. |
+
+La interfaz incluye formularios con validación, tablas paginadas, estados vacíos y mensajes de error que conservan los datos introducidos. Se adapta a escritorio y móvil.
+
+## Evidencia de calidad
+
+La última ejecución registrada tiene **47 pruebas aprobadas, 0 fallidas y 0 omitidas**: 24 unitarias, 10 HTTP y 13 de integración con PostgreSQL real. [Consultar resultados y salida de la suite](docs/EXECUTION_RESULTS.md).
+
+- **Integridad del historial:** PostgreSQL impide eliminar casos con ejecuciones; la API responde `409`.
+- **Pruebas aisladas:** cada prueba de BD crea y elimina su propio esquema en una base exclusiva de pruebas.
+- **Validación y persistencia:** cobertura de entradas inválidas, límites de texto, IDs inexistentes, edición parcial y consultas parametrizadas.
+- **Defecto documentado:** [VQ-001](docs/BUG_REPORTS.md) muestra el diagnóstico y la corrección de un error detectado mediante integración real.
+
+Los resultados corresponden a la versión y al entorno indicados en el informe; no representan una medición de cobertura de líneas. La colección de Postman está disponible y su ejecución aún no está registrada.
+
+## Arquitectura
+
+La API organiza el código por funcionalidad y separa las responsabilidades:
+
+```text
+Navegador → Router / controlador → Servicio → Repositorio → PostgreSQL
+```
+
+Los controladores traducen HTTP, los servicios aplican reglas de negocio y los repositorios ejecutan SQL parametrizado mediante `pg`. La aplicación Express se construye sin iniciar el servidor, lo que permite probarla con dependencias controladas. El dashboard utiliza un repositorio de lectura sin añadir un servicio que solo reenvíe llamadas.
+
+[Decisiones de arquitectura y modelo de datos](docs/ARCHITECTURE.md) · [Referencia de la API](docs/API.md)
+
+## Ejecutar localmente
+
+Requisitos: **Node.js 24 o superior**, npm y PostgreSQL activo. La verificación registrada utilizó Node.js 26.8.1 y PostgreSQL 18.6. Se necesitan las utilidades `createdb` y `psql`, y un rol PostgreSQL con permiso para crear las bases.
+
+Desde la carpeta del proyecto:
 
 ```sh
 npm ci
 cp .env.example .env
-createdb veriq
-createdb veriq_test
 ```
 
-Edita .env con las URLs de tus bases, incluyendo usuario, contraseña, host y puerto reales. DATABASE_URL debe apuntar a veriq y TEST_DATABASE_URL a veriq_test. No subas .env a Git.
-
-Aplica el esquema una sola vez en la base de desarrollo vacía:
+Configura `DATABASE_URL` y `TEST_DATABASE_URL` en `.env`. La base de desarrollo será `veriq` y la de pruebas `veriq_test`. Los siguientes ejemplos usan el rol local `veriq`; adapta host, puerto y usuario para que coincidan con tus URLs:
 
 ```sh
-psql -d veriq -v ON_ERROR_STOP=1 -f database/schema.sql
-# Opcional: un caso de ejemplo, sin resultados de QA inventados.
-psql -d veriq -v ON_ERROR_STOP=1 -f database/seed.sql
+createdb -h 127.0.0.1 -U veriq veriq
+createdb -h 127.0.0.1 -U veriq veriq_test
+psql -h 127.0.0.1 -U veriq -d veriq -v ON_ERROR_STOP=1 -f database/schema.sql
 npm start
 ```
 
-Si configuraste otro host o usuario en .env, usa los mismos en psql. El esquema no borra tablas existentes: una segunda aplicación fallará y revertirá su transacción. El seed es opcional y debe ejecutarse una sola vez para evitar duplicados.
+Abre [VeriQ en localhost](http://127.0.0.1:3000). Este enlace funciona con el servidor local en ejecución; no es una demo alojada. No se necesita compilación del frontend. [Configuración detallada y solución de problemas](docs/SETUP.md).
 
-La API escucha en http://127.0.0.1:3000. /api/health comprueba el proceso; /api/ready comprueba PostgreSQL. /api/test-cases devuelve la lista real. Abre la raíz / en el navegador para usar la interfaz.
-
-## Pruebas
+## Verificar el proyecto
 
 ```sh
+# Unitarias y HTTP; PostgreSQL se omite si TEST_DATABASE_URL no está exportada.
 npm test
-npm run check
+
+# Suite completa, leyendo las dos URLs desde .env.
+node --env-file=.env --test --test-reporter=spec
+
+# Solo integración PostgreSQL y revisión de sintaxis.
 npm run test:db
+npm run check
 ```
 
-npm test ejecuta unitarias y HTTP; las pruebas PostgreSQL se omiten explícitamente si TEST_DATABASE_URL no está exportada. npm run test:db lee .env: configura TEST_DATABASE_URL para ejecutar las pruebas reales de PostgreSQL (sin ella aparecerán como omitidas).
+La base de pruebas debe terminar en `_test` y tener un nombre distinto del de desarrollo. El usuario de pruebas necesita permiso `CREATE` en esa base. Una ejecución con pruebas omitidas no equivale a una verificación completa.
 
-Las pruebas reales exigen una base cuyo nombre termine en _test y sea distinto del nombre de DATABASE_URL. Cada prueba crea y elimina exclusivamente su propio esquema aleatorio. No usa ni limpia las tablas públicas de desarrollo. El usuario de pruebas necesita permiso CREATE en esa BD.
+## Documentación
 
-La colección [Postman](postman/VeriQ.postman_collection.json) permite verificar creación, consulta, edición y borrado de casos. Su ejecución no está registrada.
+| Documento | Contenido |
+| --- | --- |
+| [Arquitectura](docs/ARCHITECTURE.md) | Responsabilidades, decisiones y relaciones entre datos. |
+| [API REST](docs/API.md) | Endpoints, payloads, validaciones y códigos de respuesta. |
+| [Plan de pruebas](docs/TEST_PLAN.md) | Riesgos, niveles de prueba y criterios de aceptación. |
+| [Matriz de pruebas](docs/TEST_CASES.md) | Trazabilidad entre comportamientos y verificaciones. |
+| [Resultados](docs/EXECUTION_RESULTS.md) | Entorno, comandos, evidencia y límites de la verificación. |
+| [Reporte de defecto](docs/BUG_REPORTS.md) | Reproducción, causa raíz y regresión de VQ-001. |
+| [Colección Postman](postman/README.md) | Solicitudes importables para el CRUD de casos. |
 
-## Uso de la interfaz
+## Alcance y mejoras siguientes
 
-- **Resumen:** conteos reales y últimas ejecuciones. Un proyecto vacío muestra ceros.
-- **Casos de prueba:** crear, consultar, editar y ejecutar; el detalle permite eliminar casos sin historial.
-- **Ejecuciones:** registrar desde un caso, consultar el resultado y la versión probada; filtrar por ID del caso.
-- **Bugs:** registrar y editar defectos, distinguir severidad de prioridad y filtrar por estado.
+El MVP está pensado para un único espacio de trabajo local. No incluye autenticación, roles, adjuntos, exportaciones ni despliegue público. La inmutabilidad del historial se garantiza a través de la API; un administrador con acceso SQL puede modificar los registros.
 
-Los formularios conservan lo escrito cuando falla una solicitud. Las tablas tienen paginación y desplazamiento horizontal en pantallas pequeñas. La aplicación utiliza la zona horaria del navegador para mostrar fechas; la API conserva fechas UTC.
-
-## Límites del MVP
-
-Un solo espacio local, sin usuarios, autenticación, adjuntos ni despliegue público. El historial es inmutable por API; un administrador con acceso SQL puede modificar la base. No hay exportación, búsqueda de texto ni edición simultánea con detección de conflictos. La persistencia se guarda en PostgreSQL, no en el navegador.
+Las siguientes mejoras serían migraciones versionadas, autenticación para uso compartido, control de conflictos de edición y una suite de navegador repetible. La revisión visual actual no sustituye una auditoría completa de accesibilidad.

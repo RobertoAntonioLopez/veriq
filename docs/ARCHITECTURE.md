@@ -1,83 +1,101 @@
-# VeriQ: arquitectura y alcance
+# Arquitectura
 
-## Decisión
-MVC tradicional funciona bien para vistas renderizadas en servidor, pero aquí el navegador consume JSON. Las capas globales separan responsabilidades, aunque dispersan cada funcionalidad. Elegimos módulos por funcionalidad con capas internas: router → controlador HTTP → servicio de negocio → repositorio SQL. No habrá clases base, ORM ni contenedor de dependencias.
+## Contexto y decisión
 
-La aplicación Express se construye separada del servidor para probarla sin arrancar el proceso de producción. Las validaciones serán funciones puras. PostgreSQL mantendrá restricciones además de las validaciones del servicio. Todas las entradas SQL usarán parámetros.
+VeriQ es una aplicación local de gestión de QA con una interfaz que consume JSON. Su alcance requiere separación de responsabilidades, persistencia relacional y facilidad para verificar las reglas de negocio.
 
-## MVP exacto
-- Casos: crear, listar, consultar, editar y eliminar cuando no tengan ejecuciones.
-- Ejecuciones: registrar Passed, Failed o Blocked, observaciones y fecha; consultar historial inmutable.
-- Bugs: crear, listar, consultar y editar; vínculo opcional a un caso.
-- Dashboard: total de casos y ejecuciones, ejecuciones por resultado y bugs no cerrados.
-- Una instalación local, sin usuarios ni autenticación. No publicar en Internet tal cual.
-- UI vanilla, navegación lateral, tablas, formularios accesibles, estados vacíos y mensajes de error/éxito. Gris claro, blanco y azul; logo tipográfico VeriQ. Sin badges decorativos ni cifras simuladas.
+| Alternativa | Evaluación |
+| --- | --- |
+| MVC tradicional | Es una opción adecuada para vistas renderizadas en servidor; aporta menos valor en esta interfaz estática que consume una API. |
+| Capas globales | Separa HTTP, negocio y datos, pero distribuye los archivos de una funcionalidad entre varias carpetas. |
+| Módulos por funcionalidad | Mantiene juntos los componentes de cada flujo y permite conservar capas internas. Es la opción implementada. |
 
-Fuera: roles, múltiples proyectos, hitos, adjuntos, exportaciones, notificaciones, microservicios y gráficos secundarios.
+Cada módulo con reglas de negocio contiene router, controlador, servicio, repositorio y validación. El dashboard es una consulta agregada: su router y repositorio cubren la responsabilidad sin una capa de servicio adicional.
 
-## Árbol propuesto
+## Responsabilidades y referencias
+
+| Componente | Responsabilidad | Ejemplo |
+| --- | --- | --- |
+| Aplicación | Componer rutas, servir archivos estáticos y manejar errores. | [app.js](../src/app.js) |
+| Servidor | Leer configuración, escuchar en localhost y cerrar conexiones. | [server.js](../src/server.js) |
+| Controlador | Traducir solicitudes y resultados a HTTP. | [Controlador de casos](../src/modules/test-cases/controller.js) |
+| Servicio | Aplicar reglas, resolver inexistentes y traducir conflictos. | [Servicio de casos](../src/modules/test-cases/service.js) |
+| Validación | Comprobar tipos, campos, límites y enumeraciones. | [Validación de casos](../src/modules/test-cases/validation.js) |
+| Repositorio | Ejecutar SQL parametrizado y devolver registros. | [Repositorio de ejecuciones](../src/modules/test-runs/repository.js) |
+| Interfaz | Gestionar navegación, formularios y presentación. | [Aplicación del navegador](../public/js/app.js) |
+
+Las validaciones de API son independientes de HTTP y pueden probarse como funciones puras. El navegador valida entradas para facilitar el uso; la API vuelve a validarlas y PostgreSQL aplica restricciones de integridad.
+
+## Estructura
+
 ```text
 veriq/
 ├── src/
 │   ├── app.js
 │   ├── server.js
-│   ├── config/db.js
-│   ├── middleware/error-handler.js
+│   ├── config/
+│   ├── middleware/
+│   ├── utils/
 │   └── modules/
-│       ├── test-cases/  # routes, controller, service, repository, validation
+│       ├── test-cases/
 │       ├── test-runs/
 │       ├── bugs/
 │       └── dashboard/
 ├── public/
 │   ├── index.html
-│   ├── css/styles.css
-│   └── js/             # api y DOM por pantalla
+│   ├── css/
+│   └── js/
 ├── database/
-│   ├── schema.sql
-│   └── seed.sql
 ├── tests/
 │   ├── unit/
-│   └── integration/
+│   ├── integration/
+│   ├── database/
+│   └── helpers/
+├── scripts/
 ├── postman/
-├── docs/
-├── .env.example
-├── package.json
-└── README.md
+└── docs/
 ```
-Solo se crean directorios cuando contienen una implementación útil.
 
 ## Modelo de datos
-IDs INTEGER GENERATED ALWAYS AS IDENTITY; fechas TIMESTAMPTZ en UTC.
 
-| Tabla | Campos |
-| --- | --- |
-| test_cases | id, title (1–200), description, preconditions, steps (obligatorio), expected_result (obligatorio), priority (low/medium/high), created_at, updated_at |
-| test_runs | id, test_case_id obligatorio, result (passed/failed/blocked), notes, case_snapshot JSONB, created_at |
-| bugs | id, test_case_id opcional, title (1–200), description, steps_to_reproduce, expected_result, actual_result, severity (minor/major/critical), priority (low/medium/high), status (open/in_progress/resolved/closed), created_at, updated_at |
+El [esquema SQL](../database/schema.sql) es la definición de referencia. Los IDs son enteros generados por PostgreSQL y las fechas son `TIMESTAMPTZ`.
 
-Un caso tiene muchas ejecuciones y muchos bugs. FK de ejecuciones con ON DELETE RESTRICT: borrar un caso ejecutado responde 409. FK de bugs con ON DELETE SET NULL. Cada ejecución conserva una copia de los campos del caso para que las ediciones posteriores no alteren lo probado; insertar mediante INSERT…SELECT en una sola sentencia. No hay endpoint para editar/borrar ejecuciones. Títulos repetidos se permiten: no son identificadores únicos.
-
-Severidad representa impacto técnico; prioridad representa urgencia de atención. Bugs abiertos en el dashboard significa status distinto de closed, incluyendo resolved pendiente de cierre. Conteos de Passed/Failed/Blocked corresponden a todas las ejecuciones, no al último estado de cada caso.
-
-## Contrato REST previsto
-Base /api. JSON de éxito: {data: …}; error: {error: {code, message}}.
-
-| Método | Ruta | Resultado |
+| Entidad | Datos principales | Relación |
 | --- | --- | --- |
-| GET | /health | 200 proceso vivo |
-| GET | /ready | 200 BD accesible; 503 si no lo está |
-| GET, POST | /test-cases | lista paginada / creación 201 |
-| GET, PATCH, DELETE | /test-cases/:id | detalle / edición parcial / borrado 204 |
-| GET, POST | /test-runs | historial paginado, filtro testCaseId / registro 201 |
-| GET | /test-runs/:id | detalle con snapshot |
-| GET, POST | /bugs | lista paginada, filtro status / creación 201 |
-| GET, PATCH | /bugs/:id | detalle / edición parcial |
-| GET | /dashboard | los seis conteos reales |
+| `test_cases` | Título, descripción, precondiciones, pasos, resultado esperado y prioridad. | Un caso puede tener muchas ejecuciones y muchos bugs. |
+| `test_runs` | Caso, resultado, observaciones, instantánea JSONB y fecha. | El caso es obligatorio; `ON DELETE RESTRICT`. |
+| `bugs` | Descripción del defecto, reproducción, esperado/actual, severidad, prioridad y estado. | El caso es opcional; `ON DELETE SET NULL`. |
 
-Listas: limit por defecto 20, máximo 100; offset por defecto 0; orden created_at DESC, id DESC. Validar IDs enteros positivos, enums, campos desconocidos y PATCH vacío. Texto libre máximo 10 000 caracteres; recortar espacios de títulos. Errores: 400 entrada inválida, 404 recurso inexistente, 409 relación impide borrado, 413 payload excesivo, 500 error inesperado. No filtrar trazas ni mensajes internos de PostgreSQL.
+Un caso con ejecuciones no se elimina. Un caso sin ejecuciones puede eliminarse, conservando sus bugs con el vínculo en `null`. Los títulos repetidos están permitidos: el ID es el identificador del recurso.
 
-## Estrategia de QA
-node:test para validación pura, servicios y contratos HTTP. Integración real en una BD exclusiva de pruebas con TEST_DATABASE_URL, distinta de DATABASE_URL; no truncar la BD de desarrollo. Las pruebas HTTP de infraestructura usan un adaptador simulado; las pruebas de módulos ejecutan consultas sobre PostgreSQL real en esquemas aislados. Postman cubrirá positivos, negativos, límites, inexistentes, títulos repetidos y restricciones de borrado. Registrar únicamente ejecuciones realizadas y defectos observados. Las verificaciones automatizadas continúan durante cada incremento.
+## Decisiones de integridad
 
-## Simplificación del dashboard
-El dashboard solo expone una lectura agregada. Su router gestiona HTTP y su repositorio contiene la consulta. No se añade un servicio que únicamente reenvíe la misma llamada. Los módulos con reglas de negocio mantienen sus servicios separados.
+### Historial de ejecuciones
+
+Cada resultado es una nueva fila. Una sentencia `INSERT … SELECT` lee el caso y almacena su instantánea con la ejecución. Esto evita separar la captura y la inserción en dos solicitudes SQL. La instantánea utiliza los nombres camelCase del contrato de API.
+
+No hay endpoints para editar o borrar ejecuciones. Editar un caso modifica su versión actual, pero no sus instantáneas históricas.
+
+### Severidad y prioridad
+
+La severidad expresa el impacto del defecto (`minor`, `major`, `critical`). La prioridad indica la urgencia de atención (`low`, `medium`, `high`). El estado permite `open`, `in_progress`, `resolved` y `closed`, incluyendo reapertura.
+
+### Estadísticas
+
+El dashboard calcula seis conteos en una única consulta. Passed, Failed y Blocked cuentan todas las ejecuciones históricas, no el último resultado por caso. `openBugs` cuenta todos los bugs pendientes de cierre: abiertos, en progreso y resueltos. La tabla «Bugs abiertos» filtra únicamente `open`.
+
+## API y acceso a datos
+
+- SQL parametrizado para los valores de entrada; columnas de edición tomadas de mapas fijos.
+- Listas con límite, desplazamiento y orden estable por fecha e ID descendentes.
+- Respuestas JSON consistentes; los errores internos se registran en el servidor y no se exponen en el cuerpo HTTP.
+- Frontend estático servido desde `public/`, sin acceso HTTP al código del servidor o `.env`.
+- Aplicación y servidor separados para que las pruebas puedan abrir puertos temporales.
+
+El contrato completo está en [API.md](API.md).
+
+## Compromisos del MVP
+
+Se utiliza JavaScript con ES Modules y `pg`, sin ORM ni framework de frontend. El SQL explícito permite revisar las restricciones y la persistencia junto a sus pruebas. El esquema inicial es transaccional, pero todavía no existe un sistema de migraciones versionadas.
+
+La paginación usa offset por simplicidad. No hay control de conflictos entre ediciones concurrentes. El servidor escucha en localhost y no incorpora autenticación. Estas decisiones delimitan una aplicación local, no un servicio listo para acceso público.

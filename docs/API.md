@@ -1,4 +1,4 @@
-# API implementada
+# Referencia de la API REST
 
 Base local: http://127.0.0.1:3000/api. JSON con Content-Type: application/json.
 
@@ -26,9 +26,9 @@ Ejemplo de creación:
 
 Obligatorios: title, steps, expectedResult. description y preconditions toman texto vacío; priority toma medium si se omite. Prioridades: low, medium, high. Título de 1–200 caracteres; otros textos hasta 10 000. Se recortan espacios de los extremos. No se permiten nulos, carácter NUL ni campos desconocidos. Se permiten títulos repetidos.
 
-PATCH acepta un subconjunto no vacío de los mismos campos; no modifica los omitidos. IDs, createdAt y updatedAt son de solo lectura. Respuestas usan camelCase; PostgreSQL usa snake_case. Fechas ISO 8601 UTC.
+PATCH acepta un subconjunto no vacío de los mismos campos; no modifica los omitidos. IDs, createdAt y updatedAt son de solo lectura. Respuestas usan camelCase; PostgreSQL usa snake_case. Fechas en formato ISO 8601 con zona horaria.
 
-Listas ordenadas por created_at DESC, id DESC. limit entre 1 y 100, offset entero no negativo. No hay búsqueda ni otros filtros en esta etapa.
+Listas ordenadas por created_at DESC, id DESC. limit entre 1 y 100, offset entero no negativo. La lista de casos no admite búsqueda ni filtros adicionales.
 
 Errores con forma {"error":{"code":"…","message":"…"}}:
 - 400 VALIDATION_ERROR: entrada fuera del contrato.

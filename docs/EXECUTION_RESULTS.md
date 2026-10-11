@@ -1,64 +1,56 @@
-# Evidencia de la etapa inicial
+# Resultados de verificación
 
-Fecha: 2026-10-10. Node.js v26.8.1.
+## Resumen
 
-- `node --test --test-reporter=spec tests/integration/app.test.js`: 7 pruebas aprobadas, 0 fallidas.
-- `npm run check`: aprobado.
-- Instalación de dependencias: 80 paquetes auditados, 0 vulnerabilidades reportadas en ese momento.
+**47 pruebas aprobadas, 0 fallidas y 0 omitidas.** Verificación registrada el 2026-10-10 para VeriQ 0.1.0.
 
-Cobertura: salud HTTP sin BD, readiness con adaptador disponible, BD ausente, BD fallida sin exposición de detalles, 404 JSON, JSON malformado 400 y límite de cuerpo 413.
+| Nivel | Aprobadas | Alcance |
+| --- | ---: | --- |
+| Unitarias | 24 | Validación, paginación, Unicode y escape de texto. |
+| HTTP / servidor | 10 | Salud, disponibilidad, errores y archivos estáticos. |
+| API con PostgreSQL real | 13 | Casos, ejecuciones, bugs, dashboard e integridad relacional. |
+| **Total** | **47** | **Sin fallos ni omisiones.** |
 
-No se verificó PostgreSQL real, UI ni flujos de negocio. No se ejecutó Postman. No hay defectos funcionales confirmados que reportar en esta etapa.
+La revisión de sintaxis con `npm run check` también pasó. No se ha medido un porcentaje de cobertura de líneas.
 
-## Archivos del incremento
-- `package.json`, `package-lock.json`: dependencias y comandos reproducibles.
-- `.gitignore`, `.env.example`: configuración sin secretos.
-- `src/app.js`: aplicación y endpoints health/ready.
-- `src/server.js`: escucha local y cierre de conexiones.
-- `src/config/db.js`: pool PostgreSQL opcional con límites de espera.
-- `src/middleware/error-handler.js`: errores JSON sin detalles internos.
-- `tests/integration/app.test.js`: contratos HTTP con dependencia de BD simulada.
+## Entorno y reproducción
 
-Verificación local: `npm ci`, `npm test`, `npm run check`, `npm start`; consultar `/api/health` y `/api/ready` como explica README.
+- Linux.
+- Node.js 26.8.1 y npm 12.0.2.
+- PostgreSQL 18.6.
+- `DATABASE_URL` y `TEST_DATABASE_URL` configuradas con bases diferentes.
+- Esquema aleatorio por prueba de BD, eliminado al finalizar.
 
-Commit del incremento: `chore: initialize Express application with health checks`.
+Después de seguir [SETUP.md](SETUP.md):
 
-## Esquema PostgreSQL — 2026-10-10
+```sh
+node --env-file=.env --test --test-reporter=spec
+npm run check
+```
 
-Instancia PostgreSQL temporal en localhost:55439, BD veriq_test, separada de desarrollo. Se aplicó schema.sql con ON_ERROR_STOP: tres tablas y cinco índices creados. Se aplicó seed.sql y se comprobó la existencia del caso de ejemplo. Los datos del seed no representan pruebas ejecutadas ni defectos reales.
+[Salida completa de la suite](verification/node-test.txt) · [Salida de la revisión de sintaxis](verification/syntax-check.txt).
 
-Archivos: database/schema.sql y database/seed.sql. Commit: feat(database): add QA schema and sample seed.
+`npm test` sin la variable de pruebas exportada omite explícitamente los casos PostgreSQL. Ese resultado parcial no equivale al total registrado aquí.
 
-## CRUD de casos — 2026-10-10
+## Hallazgo y regresión
 
-- Comando: TEST_DATABASE_URL apuntando a PostgreSQL temporal, node --test --test-reporter=spec.
-- Resultado final: 39 pruebas aprobadas, 0 fallidas, 0 omitidas (22 unitarias, 9 HTTP con dependencia simulada y 8 de API/BD real).
-- Primera ejecución: 36 aprobadas y 1 fallida. VQ-001 detectado, corregido y verificado antes del commit; después se añadieron dos pruebas HTTP de manejo de errores.
-- npm run check: todos los JavaScript de src, tests y scripts pasaron la revisión de sintaxis.
-- PostgreSQL real: creación y lectura persistida, edición parcial, borrado, listas y paginación, títulos repetidos, validación sin mutaciones, inexistentes, texto similar a SQL, Unicode, límites, protección del historial, conservación de bugs y restricciones de BD.
-- Cada prueba PostgreSQL utilizó un esquema aleatorio propio, eliminado al terminar. No se modificó una BD de desarrollo.
+La integración de casos detectó que borrar un caso con ejecuciones devolvía 500 en lugar de 409. La ejecución de ese incremento tuvo 36 pruebas aprobadas y una fallida. Se corrigió la traducción del error de PostgreSQL y se volvió a verificar el comportamiento. [Reporte VQ-001](BUG_REPORTS.md).
 
-Archivos principales: src/modules/test-cases/{routes,controller,service,repository,validation}.js, src/utils/{http-error,validation}.js, src/app.js, src/middleware/error-handler.js, tests/unit/validation.test.js, tests/database/test-cases.test.js y tests/integration/app.test.js. Se amplió la comprobación de sintaxis con scripts/check.js y la configuración de pruebas con package.json y .env.example.
+## Revisión de interfaz
 
-Commit: feat(test-cases): implement validated CRUD with database tests.
+La comprobación de navegador utilizó una base independiente de desarrollo. Se observaron:
 
-## Colección de API
+- Creación y edición de casos, con campos obligatorios.
+- Registro de una ejecución y conservación del título original tras editar el caso.
+- Texto con marcado HTML mostrado literalmente.
+- Error por relación de bug inexistente con el formulario conservado.
+- Creación, cierre y filtrado de bugs, con actualización del dashboard.
+- Diseño de escritorio y móvil; sin desbordamiento horizontal de la página en la vista móvil inspeccionada.
 
-La colección postman/VeriQ.postman_collection.json incluye diez solicitudes ordenadas y aserciones. Se comprobaron su JSON y la sintaxis de sus scripts; su ejecución en Postman no está registrada.
+No se observaron errores de consola en la consulta realizada. La [captura del dashboard](images/dashboard.png) corresponde al entorno de verificación y muestra sus datos de prueba.
 
-## MVP completo — 2026-10-10
+## Límites de la evidencia
 
-Resultado final de node --test --test-reporter=spec con TEST_DATABASE_URL configurada: **47 aprobadas, 0 fallidas, 0 omitidas**. Distribución: 24 unitarias, 10 HTTP/servidor y 13 de API con PostgreSQL real. npm run check aprobado para src, tests, scripts y public/js.
+La revisión de navegador no es una suite E2E repetible ni una auditoría completa de accesibilidad. El borrado se comprobó mediante la API automatizada, no mediante la interfaz. No hay una matriz registrada de todos los navegadores o resoluciones.
 
-### Incrementos verificados
-- Ejecuciones: registro append-only, filtro por caso, instantáneas y errores de entrada; regresión del CRUD de casos.
-- Bugs: creación, estados, severidad/prioridad independientes, relaciones opcionales y ediciones atómicas.
-- Dashboard: ceros iniciales y conteos de historial y bugs no cerrados.
-- Interfaz: archivos estáticos, formularios, tablas, paginación, detalle de registros, filtros, estados vacíos y mensajes. Pruebas unitarias de escape de texto y límites Unicode, más comprobación HTTP de que .env y archivos internos no son públicos.
-
-### Revisión de navegador
-Entorno separado: veriq_ui_test, API en puerto 3001. Se verificaron creación y edición de un caso, campos obligatorios, registro de ejecución, conservación del título original en el historial, texto HTML mostrado literalmente, error por relación de bug inexistente sin perder el formulario, creación y cierre de bug, filtro por estado y dashboard actualizado. Se inspeccionaron vistas de escritorio y móvil; en móvil se comprobó ausencia de desbordamiento horizontal de la página. Sin errores de consola en la consulta realizada.
-
-La revisión visual fue una comprobación de desarrollo, no una suite de extremo a extremo repetible. La suite automatizada cubre el borrado; no se ejecutó ese flujo mediante el navegador. Tampoco se realizó una auditoría completa de accesibilidad o de todos los tamaños de pantalla.
-
-La base de uso local veriq permanece separada y vacía, disponible en el puerto 3000. No se trasladaron los datos de verificación. La ejecución en Postman no está registrada.
+La colección Postman tiene JSON y scripts revisados, pero **su ejecución no está registrada**. Tampoco se han realizado pruebas de carga o una evaluación de seguridad completa. La [matriz de pruebas](TEST_CASES.md) distingue verificaciones existentes y pendientes.
