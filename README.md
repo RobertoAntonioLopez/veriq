@@ -4,6 +4,10 @@
 
 VeriQ permite definir qué comprobar, registrar el resultado de cada ejecución y seguir los defectos hasta su cierre. Cada ejecución conserva una copia del caso probado: una edición posterior no altera la evidencia histórica.
 
+[Abrir demo](https://veriq.roberto-antonio-lopez.workers.dev) · [Repositorio](https://github.com/RobertoAntonioLopez/veriq)
+
+La demo utiliza una base independiente con datos de ejemplo. Es un espacio compartido sin inicio de sesión; los cambios son visibles para otros visitantes.
+
 Proyecto de portafolio orientado a desarrollo backend y aseguramiento de calidad, construido con **Node.js, Express, PostgreSQL y JavaScript vanilla**.
 
 ![Dashboard de VeriQ con estadísticas, historial de ejecuciones y navegación lateral](docs/images/dashboard.png)

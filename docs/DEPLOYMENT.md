@@ -1,5 +1,9 @@
 # Despliegue en Cloudflare Workers
 
+Demo: https://veriq.roberto-antonio-lopez.workers.dev
+
+Verificado el 11 de octubre de 2026: interfaz y recursos estáticos, disponibilidad de API y PostgreSQL, consultas de dashboard/ejecuciones/bugs, y ciclo de creación, consulta, actualización, validación y eliminación de un caso temporal. La comprobación pública devolvió 201, 200, 400, 204 y 404 según el escenario; el registro temporal fue retirado.
+
 VeriQ conserva Express y PostgreSQL. Workers sirve los archivos de `public/` y ejecuta la API mediante `src/worker.js`; el servidor local sigue usando `src/server.js`.
 
 ## Base de datos
