@@ -39,4 +39,29 @@ Errores con forma {"error":{"code":"…","message":"…"}}:
 - 503 DATABASE_UNAVAILABLE: BD sin configurar (o no disponible en /ready).
 - 500 INTERNAL_ERROR: fallo inesperado, incluyendo errores del repositorio; detalles solo en logs.
 
-/ready verifica SELECT 1, no la versión del esquema. Aplicar schema.sql antes de usar el CRUD. Las rutas de ejecuciones, bugs y dashboard todavía no están implementadas.
+/ready verifica SELECT 1, no la versión del esquema. Aplicar schema.sql antes de usar el CRUD. La interfaz web se sirve en la raíz /.
+
+## Ejecuciones
+
+| Método | Ruta | Respuesta |
+| --- | --- | --- |
+| POST | /test-runs | 201 + Location + {data: ejecución} |
+| GET | /test-runs?testCaseId=1&limit=20&offset=0 | 200, historial paginado; filtro opcional |
+| GET | /test-runs/:id | 200, detalle e instantánea del caso |
+
+Creación: {"testCaseId":1,"result":"passed","notes":"Observaciones"}. testCaseId debe ser número entero positivo, result es passed/failed/blocked, notes es opcional y admite hasta 10 000 caracteres. 404 si el caso no existe. La copia caseSnapshot se crea en la misma sentencia SQL que la ejecución. No hay edición ni borrado de ejecuciones; esas rutas devuelven 404. Un ID de ejecución inexistente devuelve TEST_RUN_NOT_FOUND.
+
+## Bugs
+
+| Método | Ruta | Respuesta |
+| --- | --- | --- |
+| POST | /bugs | 201 + Location + {data: bug} |
+| GET | /bugs?status=open&limit=20&offset=0 | 200, lista paginada; filtro opcional |
+| GET | /bugs/:id | 200, detalle |
+| PATCH | /bugs/:id | 200, edición parcial |
+
+Obligatorios: title (hasta 200), description, stepsToReproduce, expectedResult, actualResult (hasta 10 000 cada uno) y severity (minor/major/critical). priority es low/medium/high, por defecto medium; status es open/in_progress/resolved/closed, por defecto open. testCaseId es opcional: número entero o null. Se puede quitar la relación mediante PATCH con testCaseId:null. 404 si el bug o el caso relacionado no existe. Las transiciones entre estados son libres, incluyendo reaperturas. No hay endpoint de borrado de bugs en el MVP.
+
+## Dashboard
+
+GET /dashboard devuelve {data:{testCases,testRuns,passed,failed,blocked,openBugs}}. Todos los valores son números calculados en una sola consulta. Las ejecuciones cuentan todo el historial; openBugs incluye open, in_progress y resolved, y excluye closed. No se calculan porcentajes sobre datos simulados.

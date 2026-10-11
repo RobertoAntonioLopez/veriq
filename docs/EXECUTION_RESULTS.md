@@ -45,3 +45,20 @@ Commit: feat(test-cases): implement validated CRUD with database tests.
 ## Colección de API
 
 La colección postman/VeriQ.postman_collection.json incluye diez solicitudes ordenadas y aserciones. Se comprobaron su JSON y la sintaxis de sus scripts; su ejecución en Postman no está registrada.
+
+## MVP completo — 2026-10-10
+
+Resultado final de node --test --test-reporter=spec con TEST_DATABASE_URL configurada: **47 aprobadas, 0 fallidas, 0 omitidas**. Distribución: 24 unitarias, 10 HTTP/servidor y 13 de API con PostgreSQL real. npm run check aprobado para src, tests, scripts y public/js.
+
+### Incrementos verificados
+- Ejecuciones: registro append-only, filtro por caso, instantáneas y errores de entrada; regresión del CRUD de casos.
+- Bugs: creación, estados, severidad/prioridad independientes, relaciones opcionales y ediciones atómicas.
+- Dashboard: ceros iniciales y conteos de historial y bugs no cerrados.
+- Interfaz: archivos estáticos, formularios, tablas, paginación, detalle de registros, filtros, estados vacíos y mensajes. Pruebas unitarias de escape de texto y límites Unicode, más comprobación HTTP de que .env y archivos internos no son públicos.
+
+### Revisión de navegador
+Entorno separado: veriq_ui_test, API en puerto 3001. Se verificaron creación y edición de un caso, campos obligatorios, registro de ejecución, conservación del título original en el historial, texto HTML mostrado literalmente, error por relación de bug inexistente sin perder el formulario, creación y cierre de bug, filtro por estado y dashboard actualizado. Se inspeccionaron vistas de escritorio y móvil; en móvil se comprobó ausencia de desbordamiento horizontal de la página. Sin errores de consola en la consulta realizada.
+
+La revisión visual fue una comprobación de desarrollo, no una suite de extremo a extremo repetible. La suite automatizada cubre el borrado; no se ejecutó ese flujo mediante el navegador. Tampoco se realizó una auditoría completa de accesibilidad o de todos los tamaños de pantalla.
+
+La base de uso local veriq permanece separada y vacía, disponible en el puerto 3000. No se trasladaron los datos de verificación. La ejecución en Postman no está registrada.
